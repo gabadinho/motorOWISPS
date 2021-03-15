@@ -8,17 +8,20 @@ include $(TOP)/configure/CONFIG
 #==================================================
 # build a support library
 
-LIBRARY_IOC += owisps
+LIBRARY_IOC += owispsMotor
 
-# xxxRecord.h will be created from xxxRecord.dbd
-#DBDINC += xxxRecord
 # install owisps.dbd into <top>/dbd
-DBD += owisps.dbd
+DBD += owispsMotor.dbd
+
+INC += OWISPSMotorDriver.h
 
 # specify all source files to be compiled and added to the library
-#owisps_SRCS += xxx
+owispsMotor_SRCS += OWISPSMotorDriver.cpp
 
-owisps_LIBS += $(EPICS_BASE_IOC_LIBS)
+owispsMotor_LIBS += motor
+owispsMotor_LIBS += asyn
+
+owispsMotor_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================
 

@@ -28,72 +28,72 @@ September 2020
 
 
 
-#define PS35_STATUS_INITIALIZED 'I'
-#define PS35_STATUS_DISABLED    'O'
-#define PS35_STATUS_READY       'R'
-#define PS35_STATUS_POSTRAP     'T'
-#define PS35_STATUS_POSSCURVE   'S'
-#define PS35_STATUS_VELOMODE    'V'
-#define PS35_STATUS_HOMING      'P'
-#define PS35_STATUS_RELEASW     'F'
-#define PS35_STATUS_JOYMODE     'J'
-#define PS35_STATUS_DISABSW     'B'
-#define PS35_STATUS_DISABSWERR  'A'
-#define PS35_STATUS_DISCTRLERR  'M'
-#define PS35_STATUS_DISTIMEERR  'Z'
-#define PS35_STATUS_INITACTIVE  'H'
-#define PS35_STATUS_NOTRELEASED 'U'
-#define PS35_STATUS_DISMOTERR   'E'
-#define PS35_STATUS_POSTRAPWMS  'W'
-#define PS35_STATUS_POSSCURVWMS 'X'
-#define PS35_STATUS_VELOMODEWMS 'Y'
-#define PS35_STATUS_VELOMODECPC 'C'
-#define PS35_STATUS_PIEZOWMS    'N'
-#define PS35_STATUS_UNKNOWN     '?'
+#define OWISPS_STATUS_INITIALIZED 'I'
+#define OWISPS_STATUS_DISABLED    'O'
+#define OWISPS_STATUS_READY       'R'
+#define OWISPS_STATUS_POSTRAP     'T'
+#define OWISPS_STATUS_POSSCURVE   'S'
+#define OWISPS_STATUS_VELOMODE    'V'
+#define OWISPS_STATUS_HOMING      'P'
+#define OWISPS_STATUS_RELEASW     'F'
+#define OWISPS_STATUS_JOYMODE     'J'
+#define OWISPS_STATUS_DISABSW     'B'
+#define OWISPS_STATUS_DISABSWERR  'A'
+#define OWISPS_STATUS_DISCTRLERR  'M'
+#define OWISPS_STATUS_DISTIMEERR  'Z'
+#define OWISPS_STATUS_INITACTIVE  'H'
+#define OWISPS_STATUS_NOTRELEASED 'U'
+#define OWISPS_STATUS_DISMOTERR   'E'
+#define OWISPS_STATUS_POSTRAPWMS  'W'
+#define OWISPS_STATUS_POSSCURVWMS 'X'
+#define OWISPS_STATUS_VELOMODEWMS 'Y'
+#define OWISPS_STATUS_VELOMODECPC 'C'
+#define OWISPS_STATUS_PIEZOWMS    'N'
+#define OWISPS_STATUS_UNKNOWN     '?'
 
-#define PS35_REF_IDX       0
-#define PS35_REF_REFSW     1
-#define PS35_REF_REFSWIDX  2
-#define PS35_REF_IDX0      3
-#define PS35_REF_REFSW0    4
-#define PS35_REF_REFSWIDX0 5
-#define PS35_REF_MAXMIN0   6
-#define PS35_REF_MINMAX0   7
+#define OWISPS_REF_IDX       0
+#define OWISPS_REF_REFSW     1
+#define OWISPS_REF_REFSWIDX  2
+#define OWISPS_REF_IDX0      3
+#define OWISPS_REF_REFSW0    4
+#define OWISPS_REF_REFSWIDX0 5
+#define OWISPS_REF_MAXMIN0   6
+#define OWISPS_REF_MINMAX0   7
 
-#define PS35_LOWLIM_STOP  1
-#define PS35_LOWLIM_DEC   2
-#define PS35_HIGHLIM_DEC  4
-#define PS35_HIGHLIM_STOP 8
-#define PS35_POWSTG_ERROR 16
+#define OWISPS_LOWLIM_STOP  1
+#define OWISPS_LOWLIM_DEC   2
+#define OWISPS_HIGHLIM_DEC  4
+#define OWISPS_HIGHLIM_STOP 8
+#define OWISPS_POWSTG_ERROR 16
 
-#define PS35_AXISTYPE_CMD "?MOTYPE%d"
+#define OWISPS_AXISTYPE_CMD "?MOTYPE%d"
 
-#define PS35_AXESSTAT_CMD "?ASTAT"
-#define PS35_LIMSTAT_CMD  "?ESTAT%d"
+#define OWISPS_AXESSTAT_CMD "?ASTAT"
+#define OWISPS_LIMSTAT_CMD  "?ESTAT%d"
 
-#define PS35_INIT_CMD "INIT%d"
-#define PS35_MOFF_CMD "MOFF%d"
-#define PS35_MON_CMD  "MON%d"
-#define PS35_STOP_CMD "STOP%d"
+#define OWISPS_INIT_CMD "INIT%d"
+#define OWISPS_MOFF_CMD "MOFF%d"
+#define OWISPS_MON_CMD  "MON%d"
+#define OWISPS_STOP_CMD "STOP%d"
 
-#define PS35_GETCOUNTER_CMD "?CNT%d"
-#define PS35_SETCOUNTER_CMD "CNT%d=%d"
+#define OWISPS_GETCOUNTER_CMD "?CNT%d"
+#define OWISPS_SETCOUNTER_CMD "CNT%d=%d"
 
-#define PS35_GETPOSVEL_CMD "?PVEL%d"
-#define PS35_SETPOSVEL_CMD "PVEL%d=%d"
+#define OWISPS_GETPOSVEL_CMD "?PVEL%d"
+#define OWISPS_SETPOSVEL_CMD "PVEL%d=%d"
 
-#define PS35_ABSCOORD_CMD "ABSOL%d"
-#define PS35_RELCOORD_CMD "RELAT%d"
+#define OWISPS_ABSCOORD_CMD "ABSOL%d"
+#define OWISPS_RELCOORD_CMD "RELAT%d"
 
-#define PS35_POSSET_CMD    "PSET%d=%d"
-#define PS35_GETTARGET_CMD "?PSET%d"
+#define OWISPS_POSSET_CMD    "PSET%d=%d"
+#define OWISPS_GETTARGET_CMD "?PSET%d"
 
-#define PS35_POSGO_CMD "PGO%d"
+#define OWISPS_POSGO_CMD "PGO%d"
 
-#define PS35_HOME_CMD "REF%d=%d"
+#define OWISPS_HOME_CMD "REF%d=%d"
 
-#define PS35_VERSION_CMD "?VERSION"
-#define PS35_MSG_CMD     "?MSG"
+#define OWISPS_VERSION_CMD "?VERSION"
+#define OWISPS_MSG_CMD     "?MSG"
 
 
 
@@ -123,7 +123,7 @@ public:
     asynStatus poll(bool *moving);
 
     // Specific class methods
-    void updateAxisStatus(char ps35_status);
+    void updateAxisStatus(char owisps_status);
 
     void setStatusProblem(asynStatus status);
 
@@ -162,7 +162,7 @@ protected:
     int OwisInit_;
     int OwisPrem_;
     int OwisPost_;
-#define NUM_OWIS_PARAMS 3
+#define NUM_OWISPS_PARAMS 3
 
 private:
 

@@ -35,9 +35,9 @@ static const char *driverName = "OWISPSController";
   * \param[in] idlePollPeriod    The time between polls when no axis is moving 
   */
 OWISPSController::OWISPSController(const char *portName, const char *asynPortName, int numAxes, double movingPollPeriod, double idlePollPeriod)
-    :asynMotorController(portName, numAxes, NUM_OWIS_PARAMS, 
-                         asynUInt32DigitalMask | asynOctetMask, 
-                         asynUInt32DigitalMask | asynOctetMask,
+    :asynMotorController(portName, numAxes, NUM_OWISPS_PARAMS, 
+                         asynOctetMask, 
+                         asynOctetMask,
                          ASYN_CANBLOCK | ASYN_MULTIDEVICE, 
                          1, /* autoconnect */
                          0, 0) /* Default priority and stack size */ {
@@ -91,19 +91,19 @@ void OWISPSController::report(FILE *fp, int level) {
     fprintf(fp, "OWIS PS motor controller %s, numAxes=%d, moving poll period=%f, idle poll period=%f\n", this->portName, numAxes_, movingPollPeriod_, idlePollPeriod_);
 
     if (level > 0) {
-        sprintf(outString_, PS35_MSG_CMD);
+        sprintf(outString_, OWISPS_MSG_CMD);
         status = writeReadController();
         if (status == asynSuccess) {
             fprintf(fp, "    error message=%s\n", inString_);
         }
 
-        sprintf(outString_, PS35_AXESSTAT_CMD);
+        sprintf(outString_, OWISPS_AXESSTAT_CMD);
         status = writeReadController();
         if (status == asynSuccess) {
             fprintf(fp, "    axes status=%s\n", inString_);
         }
 
-        sprintf(outString_, PS35_VERSION_CMD);
+        sprintf(outString_, OWISPS_VERSION_CMD);
         status = writeReadController();
         if (status == asynSuccess) {
             fprintf(fp, "    firmware version=%s\n", inString_);
@@ -149,7 +149,7 @@ asynStatus OWISPSController::poll() {
     asynStatus status;
     OWISPSAxis* axis;
 
-    sprintf(outString_, PS35_AXESSTAT_CMD);
+    sprintf(outString_, OWISPS_AXESSTAT_CMD);
     status = writeReadController();
     if (status == asynSuccess) {
         int l=strlen(inString_);
@@ -176,19 +176,19 @@ OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axis
     asynStatus status;
 
     this->axisType = UNKNOWN;
-    this->axisStatus = PS35_STATUS_UNKNOWN;
-    this->homingType = PS35_REF_REFSW0;
+    this->axisStatus = OWISPS_STATUS_UNKNOWN;
+    this->homingType = OWISPS_REF_REFSW0;
 
-    sprintf(pC->outString_, PS35_AXISTYPE_CMD, axisNo+1);
+    sprintf(pC->outString_, OWISPS_AXISTYPE_CMD, axisNo+1);
     status = pC->writeReadController();
     if (status == asynSuccess) {
         this->axisType = (owisAxisType)atoi(pC->inString_);
 
-        sprintf(pC->outString_, PS35_LIMSTAT_CMD, axisNo+1);
+        sprintf(pC->outString_, OWISPS_LIMSTAT_CMD, axisNo+1);
         status = pC->writeReadController();
         if (status == asynSuccess) {
             int lim_switches = atoi(pC->inString_);
-            if (lim_switches & PS35_POWSTG_ERROR) {
+            if (lim_switches & OWISPS_POWSTG_ERROR) {
                 setStatusProblem(asynError);
             }
         } else {
@@ -216,7 +216,7 @@ void OWISPSAxis::report(FILE *fp, int level) {
     int lim_switches=0, readback_counter=0, target=0, velocity=0;
 
     if (level > 0) {
-        sprintf(pC_->outString_, PS35_AXESSTAT_CMD);
+        sprintf(pC_->outString_, OWISPS_AXESSTAT_CMD);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             if (strlen(pC_->inString_) > (unsigned)this->axisNo_) {
@@ -224,25 +224,25 @@ void OWISPSAxis::report(FILE *fp, int level) {
             }
         }
 
-        sprintf(pC_->outString_, PS35_LIMSTAT_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_LIMSTAT_CMD, this->axisNo_+1);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             lim_switches = atoi(pC_->inString_);
         }
 
-        sprintf(pC_->outString_, PS35_GETCOUNTER_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_GETCOUNTER_CMD, this->axisNo_+1);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             readback_counter = atoi(pC_->inString_);
         }
 
-        sprintf(pC_->outString_, PS35_GETTARGET_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_GETTARGET_CMD, this->axisNo_+1);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             target = atoi(pC_->inString_);
         }
 
-        sprintf(pC_->outString_, PS35_GETPOSVEL_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_GETPOSVEL_CMD, this->axisNo_+1);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             velocity = atoi(pC_->inString_);
@@ -283,7 +283,7 @@ void OWISPSAxis::report(FILE *fp, int level) {
 
 asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleration) {
     asynStatus status = asynError;
-    int is_disabled = (this->axisStatus==PS35_STATUS_UNKNOWN) || (this->axisStatus==PS35_STATUS_INITIALIZED) || (this->axisStatus==PS35_STATUS_DISABLED);
+    int is_disabled = (this->axisStatus==OWISPS_STATUS_UNKNOWN) || (this->axisStatus==OWISPS_STATUS_INITIALIZED) || (this->axisStatus==OWISPS_STATUS_DISABLED);
 
     switch(this->axisType) {
         case STEPPER_OPENLOOP:
@@ -294,19 +294,19 @@ asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, d
                 setIntegerParam(pC_->motorStatusDone_, 0);
 
                 if (relative) {
-                    sprintf(pC_->outString_, PS35_RELCOORD_CMD, this->axisNo_+1);
+                    sprintf(pC_->outString_, OWISPS_RELCOORD_CMD, this->axisNo_+1);
                     status = pC_->writeController();
                 } else {
-                    sprintf(pC_->outString_, PS35_ABSCOORD_CMD, this->axisNo_+1);
+                    sprintf(pC_->outString_, OWISPS_ABSCOORD_CMD, this->axisNo_+1);
                     status = pC_->writeController();
                 }
 
                 if (status == asynSuccess) {
-                    sprintf(pC_->outString_, PS35_POSSET_CMD, this->axisNo_+1, (int)position);
+                    sprintf(pC_->outString_, OWISPS_POSSET_CMD, this->axisNo_+1, (int)position);
                     status = pC_->writeController();
 
                     if (status == asynSuccess) {
-                        sprintf(pC_->outString_, PS35_POSGO_CMD, this->axisNo_+1);
+                        sprintf(pC_->outString_, OWISPS_POSGO_CMD, this->axisNo_+1);
                         status = pC_->writeController();
                     }
                 }
@@ -325,7 +325,7 @@ asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, d
 
 asynStatus OWISPSAxis::home(double minVelocity, double maxVelocity, double acceleration, int forwards) {
     asynStatus status = asynError;
-    int is_disabled = (this->axisStatus==PS35_STATUS_UNKNOWN) || (this->axisStatus==PS35_STATUS_INITIALIZED) || (this->axisStatus==PS35_STATUS_DISABLED);
+    int is_disabled = (this->axisStatus==OWISPS_STATUS_UNKNOWN) || (this->axisStatus==OWISPS_STATUS_INITIALIZED) || (this->axisStatus==OWISPS_STATUS_DISABLED);
 
     switch(this->axisType) {
         case STEPPER_OPENLOOP:
@@ -337,7 +337,7 @@ asynStatus OWISPSAxis::home(double minVelocity, double maxVelocity, double accel
                 setIntegerParam(pC_->motorStatusHome_, 1);
                 setIntegerParam(pC_->motorStatusDone_, 0);
 
-                sprintf(pC_->outString_, PS35_HOME_CMD, this->axisNo_+1, this->homingType);
+                sprintf(pC_->outString_, OWISPS_HOME_CMD, this->axisNo_+1, this->homingType);
                 status = pC_->writeController();
             }
 
@@ -356,7 +356,7 @@ asynStatus OWISPSAxis::stop(double acceleration) {
     asynStatus status = asynError;
 
     if (this->axisType != UNKNOWN) {
-        sprintf(pC_->outString_, PS35_STOP_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_STOP_CMD, this->axisNo_+1);
         status = pC_->writeController();
     }
 
@@ -368,7 +368,7 @@ asynStatus OWISPSAxis::stop(double acceleration) {
 asynStatus OWISPSAxis::setPosition(double position) {
     asynStatus status = asynError;
 
-    sprintf(pC_->outString_, PS35_SETCOUNTER_CMD, this->axisNo_+1, (int)position);
+    sprintf(pC_->outString_, OWISPS_SETCOUNTER_CMD, this->axisNo_+1, (int)position);
     status = pC_->writeController();
 
     setStatusProblem(status);
@@ -389,36 +389,36 @@ asynStatus OWISPSAxis::poll(bool *moving) {
 
     if (this->axisType != UNKNOWN) {
 
-        ismoving = ((this->axisStatus == PS35_STATUS_POSTRAP)    ||
-                    (this->axisStatus == PS35_STATUS_POSSCURVE)  ||
-                    (this->axisStatus == PS35_STATUS_HOMING)     ||
-                    (this->axisStatus == PS35_STATUS_RELEASW)    ||
-                    (this->axisStatus == PS35_STATUS_POSTRAPWMS) ||
-                    (this->axisStatus == PS35_STATUS_POSSCURVWMS)  );
+        ismoving = ((this->axisStatus == OWISPS_STATUS_POSTRAP)    ||
+                    (this->axisStatus == OWISPS_STATUS_POSSCURVE)  ||
+                    (this->axisStatus == OWISPS_STATUS_HOMING)     ||
+                    (this->axisStatus == OWISPS_STATUS_RELEASW)    ||
+                    (this->axisStatus == OWISPS_STATUS_POSTRAPWMS) ||
+                    (this->axisStatus == OWISPS_STATUS_POSSCURVWMS)  );
         *moving = ismoving;
 
-        sprintf(pC_->outString_, PS35_LIMSTAT_CMD, this->axisNo_+1);
+        sprintf(pC_->outString_, OWISPS_LIMSTAT_CMD, this->axisNo_+1);
         status = pC_->writeReadController();
         if (status == asynSuccess) {
             lim_switches = atoi(pC_->inString_);
-            if (lim_switches & PS35_POWSTG_ERROR) { // Disconnected or power error?
+            if (lim_switches & OWISPS_POWSTG_ERROR) { // Disconnected or power error?
                 status = asynError;
 
             } else {
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusLowLimit_, &at_limit);
-                if ( (lim_switches & PS35_LOWLIM_DEC) && (!at_limit)) {
+                if ( (lim_switches & OWISPS_LOWLIM_DEC) && (!at_limit)) {
                     setIntegerParam(pC_->motorStatusLowLimit_, 1);
-                } else if ( !(lim_switches & PS35_LOWLIM_DEC) && (at_limit)) {
+                } else if ( !(lim_switches & OWISPS_LOWLIM_DEC) && (at_limit)) {
                     setIntegerParam(pC_->motorStatusLowLimit_, 0);
                 }
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusHighLimit_, &at_limit);
-                if ( (lim_switches & PS35_HIGHLIM_DEC) && (!at_limit)) {
+                if ( (lim_switches & OWISPS_HIGHLIM_DEC) && (!at_limit)) {
                     setIntegerParam(pC_->motorStatusHighLimit_, 1);
-                } else if ( !(lim_switches & PS35_HIGHLIM_DEC) && (at_limit)) {
+                } else if ( !(lim_switches & OWISPS_HIGHLIM_DEC) && (at_limit)) {
                     setIntegerParam(pC_->motorStatusHighLimit_, 0);
                 }
 
-                sprintf(pC_->outString_, PS35_GETCOUNTER_CMD, this->axisNo_+1);
+                sprintf(pC_->outString_, OWISPS_GETCOUNTER_CMD, this->axisNo_+1);
                 status = pC_->writeReadController();
                 if (status == asynSuccess) {
                     readback_counter = atoi(pC_->inString_);
@@ -433,19 +433,19 @@ asynStatus OWISPSAxis::poll(bool *moving) {
     return callParamCallbacks();
 }
 
-void OWISPSAxis::updateAxisStatus(char ps35_status) {
+void OWISPSAxis::updateAxisStatus(char owisps_status) {
     int status_done, status_home, status_moving;
 
     if (this->axisType != UNKNOWN) {
 
-        this->axisStatus = ps35_status;
+        this->axisStatus = owisps_status;
 
-        switch(ps35_status) {
-            case PS35_STATUS_UNKNOWN:
+        switch(owisps_status) {
+            case OWISPS_STATUS_UNKNOWN:
                 setStatusProblem(asynError);
                 break;
 
-            case PS35_STATUS_READY:
+            case OWISPS_STATUS_READY:
                 setStatusProblem(asynSuccess);
 
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusMoving_, &status_moving);
@@ -466,12 +466,12 @@ void OWISPSAxis::updateAxisStatus(char ps35_status) {
                 }
                 break;
 
-            case PS35_STATUS_POSTRAP:
-            case PS35_STATUS_POSSCURVE:
-            case PS35_STATUS_HOMING:
-            case PS35_STATUS_RELEASW:
-            case PS35_STATUS_POSTRAPWMS:
-            case PS35_STATUS_POSSCURVWMS:
+            case OWISPS_STATUS_POSTRAP:
+            case OWISPS_STATUS_POSSCURVE:
+            case OWISPS_STATUS_HOMING:
+            case OWISPS_STATUS_RELEASW:
+            case OWISPS_STATUS_POSTRAPWMS:
+            case OWISPS_STATUS_POSSCURVWMS:
                 setStatusProblem(asynSuccess);
 
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusMoving_, &status_moving);
@@ -511,7 +511,7 @@ asynStatus OWISPSAxis::executeInit(void) {
     if (pC_->getStringParam(this->axisNo_, pC_->OwisInit_, (int)sizeof(init), init) == asynSuccess) {
         if (strlen(init)) {
             if (!strcmp(init, OwisInitValueInit)) {
-                sprintf(pC_->outString_, PS35_INIT_CMD, this->axisNo_+1);
+                sprintf(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }
 
@@ -529,10 +529,10 @@ asynStatus OWISPSAxis::executePrem(void) {
     if (pC_->getStringParam(this->axisNo_, pC_->OwisPrem_, (int)sizeof(prem), prem) == asynSuccess) {
         if (strlen(prem)) {
             if (!strcmp(prem, OwisPremValueInit)) {
-                sprintf(pC_->outString_, PS35_INIT_CMD, this->axisNo_+1);
+                sprintf(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             } else if (!strcmp(prem, OwisPremValueOn)) {
-                sprintf(pC_->outString_, PS35_MON_CMD, this->axisNo_+1);
+                sprintf(pC_->outString_, OWISPS_MON_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }
 
@@ -550,7 +550,7 @@ asynStatus OWISPSAxis::executePost(void) {
     if (pC_->getStringParam(this->axisNo_, pC_->OwisPost_, (int)sizeof(post), post) == asynSuccess) {
         if (strlen(post)) {
             if (!strcmp(post, OwisPostValueOff)) {
-                sprintf(pC_->outString_, PS35_MOFF_CMD, this->axisNo_+1);
+                sprintf(pC_->outString_, OWISPS_MOFF_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }
 

@@ -47,9 +47,9 @@ OWISPSController::OWISPSController(const char *portName, const char *asynPortNam
     int eos_len;
     static const char *functionName = "OWISPSController";
 
-    createParam(OwisInitString, asynParamOctet, &OwisInit_);
-    createParam(OwisPremString, asynParamOctet, &OwisPrem_);
-    createParam(OwisPostString, asynParamOctet, &OwisPost_);
+    createParam(AXIS_INIT_PARAMNAME, asynParamOctet, &driverInitParam);
+    createParam(AXIS_PREM_PARAMNAME, asynParamOctet, &driverPremParam);
+    createParam(AXIS_POST_PARAMNAME, asynParamOctet, &driverPostParam);
 
     // Connect to PS controller
     asynPrint(this->pasynUserSelf, ASYN_TRACE_FLOW, "%s:%s: Creating OWIS PS controller %s to asyn %s with %d axes\n", driverName, functionName, portName, asynPortName, numAxes);
@@ -136,7 +136,7 @@ asynStatus OWISPSController::writeOctet(asynUser *pasynUser, const char *value, 
     OWISPSAxis *pAxis = getAxis(pasynUser);
     
     status = asynMotorController::writeOctet(pasynUser, value, maxChars, nActual);
-    if ((status == asynSuccess) && (function == OwisInit_)) {
+    if ((status == asynSuccess) && (function == driverInitParam)) {
         pAxis->executeInit();
     }
 
@@ -182,7 +182,7 @@ OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axis
     sprintf(pC->outString_, OWISPS_AXISTYPE_CMD, axisNo+1);
     status = pC->writeReadController();
     if (status == asynSuccess) {
-        this->axisType = (owisAxisType)atoi(pC->inString_);
+        this->axisType = (owispsAxisType)atoi(pC->inString_);
 
         sprintf(pC->outString_, OWISPS_LIMSTAT_CMD, axisNo+1);
         status = pC->writeReadController();
@@ -506,11 +506,11 @@ void OWISPSAxis::setStatusProblem(asynStatus status) {
 
 asynStatus OWISPSAxis::executeInit(void) {
     asynStatus status = asynError;
-    char init[MAX_OWIS_STRING_SIZE]; // Motor record INIT field
+    char init[MAX_OWISPS_STRING_SIZE]; // Motor record INIT field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->OwisInit_, (int)sizeof(init), init) == asynSuccess) {
+    if (pC_->getStringParam(this->axisNo_, pC_->driverInitParam, (int)sizeof(init), init) == asynSuccess) {
         if (strlen(init)) {
-            if (!strcmp(init, OwisInitValueInit)) {
+            if (!strcmp(init, AXIS_INIT_VALUEINIT)) {
                 sprintf(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }
@@ -524,14 +524,14 @@ asynStatus OWISPSAxis::executeInit(void) {
 
 asynStatus OWISPSAxis::executePrem(void) {
     asynStatus status = asynError;
-    char prem[MAX_OWIS_STRING_SIZE]; // Motor record PREM field
+    char prem[MAX_OWISPS_STRING_SIZE]; // Motor record PREM field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->OwisPrem_, (int)sizeof(prem), prem) == asynSuccess) {
+    if (pC_->getStringParam(this->axisNo_, pC_->driverPremParam, (int)sizeof(prem), prem) == asynSuccess) {
         if (strlen(prem)) {
-            if (!strcmp(prem, OwisPremValueInit)) {
+            if (!strcmp(prem, AXIS_PREM_VALUEINIT)) {
                 sprintf(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_+1);
                 status = pC_->writeController();
-            } else if (!strcmp(prem, OwisPremValueOn)) {
+            } else if (!strcmp(prem, AXIS_PREM_VALUEON)) {
                 sprintf(pC_->outString_, OWISPS_MON_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }
@@ -545,11 +545,11 @@ asynStatus OWISPSAxis::executePrem(void) {
 
 asynStatus OWISPSAxis::executePost(void) {
     asynStatus status = asynError;
-    char post[MAX_OWIS_STRING_SIZE]; // Motor record POST field
+    char post[MAX_OWISPS_STRING_SIZE]; // Motor record POST field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->OwisPost_, (int)sizeof(post), post) == asynSuccess) {
+    if (pC_->getStringParam(this->axisNo_, pC_->driverPostParam, (int)sizeof(post), post) == asynSuccess) {
         if (strlen(post)) {
-            if (!strcmp(post, OwisPostValueOff)) {
+            if (!strcmp(post, AXIS_POST_VALUEOFF)) {
                 sprintf(pC_->outString_, OWISPS_MOFF_CMD, this->axisNo_+1);
                 status = pC_->writeController();
             }

@@ -14,17 +14,17 @@ September 2020
 
 
 
-#define MAX_OWIS_STRING_SIZE 80
+#define MAX_OWISPS_STRING_SIZE 80
 
-#define OwisInitString    "MOTOR_INIT"
-#define OwisInitValueInit "INIT"
+#define AXIS_INIT_PARAMNAME "MOTOR_INIT"
+#define AXIS_INIT_VALUEINIT "INIT"
 
-#define OwisPremString    "MOTOR_PREM"
-#define OwisPremValueInit "INIT"
-#define OwisPremValueOn   "MON"
+#define AXIS_PREM_PARAMNAME "MOTOR_PREM"
+#define AXIS_PREM_VALUEINIT "INIT"
+#define AXIS_PREM_VALUEON   "MON"
 
-#define OwisPostString   "MOTOR_POST"
-#define OwisPostValueOff "MOFF"
+#define AXIS_POST_PARAMNAME "MOTOR_POST"
+#define AXIS_POST_VALUEOFF  "MOFF"
 
 
 
@@ -97,7 +97,7 @@ September 2020
 
 
 
-enum owisAxisType {
+enum owispsAxisType {
     UNKNOWN=-1,
     DC_BRUSH,
     STEPPER_OPENLOOP=2,
@@ -134,7 +134,7 @@ public:
 private:
     OWISPSController *pC_; // Pointer to the asynMotorController to which this axis belongs
   
-    owisAxisType axisType;
+    owispsAxisType axisType;
     int homingType;
     char axisStatus;
   
@@ -159,9 +159,9 @@ public:
     asynStatus poll();
 
 protected:
-    int OwisInit_;
-    int OwisPrem_;
-    int OwisPost_;
+    int driverInitParam;
+    int driverPremParam;
+    int driverPostParam;
 #define NUM_OWISPS_PARAMS 3
 
 private:

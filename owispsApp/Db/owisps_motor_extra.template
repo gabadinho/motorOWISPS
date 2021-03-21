@@ -1,3 +1,9 @@
+record(motor, "$(P)$(M)")
+{
+	field(PREM, "$(PREM)")
+	field(POST, "$(POST)")
+}
+
 record(stringout, "$(P)$(M)_INIT_CMD")
 {
 	field(DESC, "Motor record INIT")

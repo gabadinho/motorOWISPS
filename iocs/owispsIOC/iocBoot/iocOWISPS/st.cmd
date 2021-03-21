@@ -1,18 +1,24 @@
 #!../../bin/linux-x86_64/owisps
 
-#- You may have to change owisps to something else
-#- everywhere it appears in this file
+< envPaths
 
-#< envPaths
+cd "${TOP}"
 
 ## Register all support components
-dbLoadDatabase("../../dbd/owisps.dbd",0,0)
+dbLoadDatabase "dbd/owisps.dbd"
 owisps_registerRecordDeviceDriver(pdbbase) 
 
-## Load record instances
-dbLoadRecords("../../db/owisps.db","user=gabadinho")
+cd "${TOP}/iocBoot/${IOC}"
+
+## motorUtil (allstop & alldone)
+dbLoadRecords("$(MOTOR)/db/motorUtil.db", "P=OWISPS:")
+
+##
+< owisps.cmd
 
 iocInit()
 
-## Start any sequence programs
-#seq sncowisps,"user=gabadinho"
+## motorUtil (allstop & alldone)
+motorUtilInit("OWISPS:")
+
+# Boot complete

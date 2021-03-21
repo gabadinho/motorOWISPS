@@ -1,0 +1,16 @@
+file "$(MOTOR)/db/basic_asyn_motor.db"
+{
+pattern
+{P,        M,        DTYP,         PORT,      ADDR,  DESC,            EGU,  DIR,  VELO,  VBAS,  ACCL,  BDST,  BVEL,  BACC,  MRES,    PREC,  DHLM,  DLLM,  INIT}
+{OWISPS:,  "MOT0",   "asynMotor",  OWISPS35,  0,     "OWIS PS Mot0",  mm,   Pos,  1,     1,     0,     0,     1,     .2,    1,       0,     1000,  1,     ""  }
+{OWISPS:,  "MOT1",   "asynMotor",  OWISPS35,  1,     "OWIS PS Mot1",  mm,   Pos,  1,     1,     0,     0,     1,     .2,    1,       0,     1000,  1,     ""  }
+}
+
+file "$(OWISPSMOTOR)/db/owisps_motor_extra.db"
+{
+pattern
+{P,        M,       PORT,      ADDR,   PREM,     POST  }
+{OWISPS:,  "MOT0",  OWISPS35,  0,      "INIT"    "MOFF"}
+{OWISPS:,  "MOT1",  OWISPS35,  1,      "",       ""    }
+}
+

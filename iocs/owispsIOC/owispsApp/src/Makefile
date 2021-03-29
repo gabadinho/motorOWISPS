@@ -5,6 +5,9 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
+# The following are used for debugging messages.
+#!USR_CXXFLAGS += -DDEBUG
+
 #=============================
 # Build the IOC application
 
@@ -16,10 +19,23 @@ DBD += owisps.dbd
 owisps_DBD += base.dbd
 
 # Include dbd files from all support applications:
-#owisps_DBD += xxx.dbd
+#ifdef ASYN
+owisps_DBD += asyn.dbd
+owisps_DBD += drvAsynSerialPort.dbd
+owisps_DBD += drvAsynIPPort.dbd
+#endif
+owisps_DBD += motorSupport.dbd
+owisps_DBD += owispsMotor.dbd
 
 # Add all the support libraries needed by this IOC
-#owisps_LIBS += xxx
+owisps_LIBS += owispsMotor
+owisps_LIBS += motor
+#ifdef ASYN
+owisps_LIBS += asyn
+#endif
+#ifdef SNCSEQ
+owisps_LIBS += seq pv
+#endif
 
 # owisps_registerRecordDeviceDriver.cpp derives from owisps.dbd
 owisps_SRCS += owisps_registerRecordDeviceDriver.cpp

@@ -4,5 +4,5 @@
 -include $(TOP)/../../../RELEASE.$(EPICS_HOST_ARCH).local
 # Use motorOWISPS's release file when building inside motorOWISPS, but outside motor
 -include $(TOP)/../../configure/RELEASE.local
-# Use owispsIOC's RELEASE.local when building outside motorQioptiqFetura
+# Use owispsIOC's RELEASE.local when building outside motorOWISPS
 -include $(TOP)/configure/RELEASE.local

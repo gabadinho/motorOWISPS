@@ -20,7 +20,7 @@ dbLoadRecords("$(ASYN)/db/asynRecord.db", "P=OWISPS:, R=ASYN1, PORT=SERUSB0, ADD
 asynSetTraceMask("SERUSB0", 0, 0x03)
 asynSetTraceIOMask("SERUSB0", 0, 0x04)
 
-# FeturaPlusCreateController(portName, asynPort, numAxes, movingPollingRate, idlePollingRate)
+# OWISPSCreateController(portName, asynPort, numAxes, movingPollingRate, idlePollingRate)
 OWISPSCreateController("OWISPS35", "SERUSB0", 3, 50, 200)
 
 # Turn off asyn trace

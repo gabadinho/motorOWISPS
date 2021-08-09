@@ -1,4 +1,0 @@
-MOTOR=/home/gabadinho/SWDev/EPICS/modules/synApps_6_1/support/motor-R7-1
--include $(MOTOR)/configure/RELEASE
-# path to motorOWISPS is needed to build the IOC inside motorOWISPS, but outside motor
-MOTOR_OWISPS=/home/gabadinho/SWDev/EPICS/motorOWISPS

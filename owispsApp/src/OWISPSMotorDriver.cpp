@@ -2,7 +2,7 @@
 FILENAME...   OWISPSMotorDriver.cpp
 USAGE...      Motor driver support (model 3, asyn) for the OWIS PS controller series
 
-Jose Gabadinho
+Jose G.C. Gabadinho
 September 2020
 */
 
@@ -28,6 +28,7 @@ September 2020
 static const char *driverName = "OWISPSController";
 
 /** Creates a new OWISPSController object.
+  *
   * \param[in] portName          The name of the asyn port that will be created for this driver
   * \param[in] asynPortName      The name of the drvAsynIPPPort that was created previously to connect to the OWIS PS controller 
   * \param[in] numAxes           The number of axes that this controller supports 
@@ -78,12 +79,11 @@ OWISPSController::OWISPSController(const char *portName, const char *asynPortNam
     startPoller(movingPollPeriod, idlePollPeriod, 2);
 }
 
-/** Reports on status of the driver
+/** Reports on status of the driver.
+  * If level > 0 then error message, firmware version, axes information is printed.
+  *
   * \param[in] fp The file pointer on which report information will be written
   * \param[in] level The level of report detail desired
-  *
-  * If details > 0 then information is printed about each axis.
-  * After printing controller-specific information calls asynMotorController::report()
   */
 void OWISPSController::report(FILE *fp, int level) {
     asynStatus status = asynError;
@@ -115,21 +115,35 @@ void OWISPSController::report(FILE *fp, int level) {
 }
 
 /** Returns a pointer to an OWISPSAxis object.
-  * Returns NULL if the axis number encoded in pasynUser is invalid.
-  * \param[in] pasynUser asynUser structure that encodes the axis index number. */
+  *
+  * \param[in] pasynUser asynUser structure that encodes the axis index number
+  *
+  * \return OWISPSAxis object or NULL if the axis number encoded in pasynUser is invalid
+  */
 OWISPSAxis* OWISPSController::getAxis(asynUser *pasynUser) {
     return static_cast<OWISPSAxis*>(asynMotorController::getAxis(pasynUser));
 }
 
 /** Returns a pointer to an OWISPSAxis object.
-  * Returns NULL if the axis number encoded in pasynUser is invalid.
-  * \param[in] axisNo Axis index number. */
+  *
+  * \param[in] axisNo Axis index number
+  *
+  * \return OWISPSAxis object or NULL if the axis number encoded in pasynUser is invalid
+  */
 OWISPSAxis* OWISPSController::getAxis(int axisNo) {
     return static_cast<OWISPSAxis*>(asynMotorController::getAxis(axisNo));
 }
 
-
-
+/** Wrapper of writeOctet, to enable the motor at initialization stage (if configured in INIT).
+  *
+  * \param[in] pasynUser asynUser structure
+  * \param[in] value     Value to write
+  * \param[in] maxChars  Number of bytes to write
+  *
+  * \param[out] nActual Number of bytes written
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSController::writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual) {
     int function = pasynUser->reason;
     asynStatus status;
@@ -143,8 +157,11 @@ asynStatus OWISPSController::writeOctet(asynUser *pasynUser, const char *value, 
     return callParamCallbacks();
 }
 
-
-
+/** Polls the controller.
+  * Reads the joint axes state and updates them.
+  *
+  * \return Result of writeReadController() call
+  */
 asynStatus OWISPSController::poll() {
     asynStatus status;
     OWISPSAxis* axis;
@@ -169,8 +186,9 @@ asynStatus OWISPSController::poll() {
 // These are the OWISPSAxis methods
 
 /** Creates a new OWISPSAxis object.
-  * \param[in] pC Pointer to the OWISPSController to which this axis belongs. 
-  * \param[in] axisNo Index number of this axis, range 0 to pC->numAxes_-1.
+  *
+  * \param[in] pC Pointer to the OWISPSController to which this axis belongs
+  * \param[in] axisNo Index number of this axis, range 0 to pC->numAxes_-1
   */
 OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axisNo), pC_(pC) {
     asynStatus status;
@@ -203,12 +221,11 @@ OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axis
     callParamCallbacks();
 }
 
-/** Reports on status of the driver
+/** Reports on status of the axis.
+  * If level > 0 then detailed axis information (type, homing, status, readback, etc.) is printed.
+  *
   * \param[in] fp The file pointer on which report information will be written
   * \param[in] level The level of report detail desired
-  *
-  * If details > 0 then information is printed about each axis.
-  * After printing controller-specific information calls asynMotorAxis::report()
   */
 void OWISPSAxis::report(FILE *fp, int level) {
     asynStatus status = asynError;
@@ -249,7 +266,7 @@ void OWISPSAxis::report(FILE *fp, int level) {
         }
 
         fprintf(fp,
-            "  AXIS %d\n"
+            "  axis %d\n"
             "  type = %d\n"
             "  homing type = %d\n"
             "    current status = %c\n"
@@ -281,6 +298,17 @@ void OWISPSAxis::report(FILE *fp, int level) {
     asynMotorAxis::report(fp, level);
 }
 
+/** Moves the axis to a different target position, executing the desired user operation defined in PREM.
+  * Warning: only implemented for stepper-motors in open-loop!
+  *
+  * \param[in] position      The desired target position
+  * \param[in] relative      1 for relative position
+  * \param[in] minVelocity   Motion parameter
+  * \param[in] maxVelocity   Motion parameter
+  * \param[in] acceleration  Motion parameter
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleration) {
     asynStatus status = asynError;
     int is_disabled = (this->axisStatus==OWISPS_STATUS_UNKNOWN) || (this->axisStatus==OWISPS_STATUS_INITIALIZED) || (this->axisStatus==OWISPS_STATUS_DISABLED);
@@ -323,6 +351,17 @@ asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, d
     return callParamCallbacks();
 }
 
+/** Starts the axis homing procedure, executing the desired user operation defined in PREM.
+  * Warning: only implemented for stepper-motors in open-loop!
+  * Currently hardwired to OWISPS_REF_REFSW0, equivalent to "REF?=4".
+  *
+  * \param[in] minVelocity   Motion parameter
+  * \param[in] maxVelocity   Motion parameter
+  * \param[in] acceleration  Motion parameter
+  * \param[in] forwards      1 if user wants to home forward, 0 for reverse
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSAxis::home(double minVelocity, double maxVelocity, double acceleration, int forwards) {
     asynStatus status = asynError;
     int is_disabled = (this->axisStatus==OWISPS_STATUS_UNKNOWN) || (this->axisStatus==OWISPS_STATUS_INITIALIZED) || (this->axisStatus==OWISPS_STATUS_DISABLED);
@@ -352,6 +391,12 @@ asynStatus OWISPSAxis::home(double minVelocity, double maxVelocity, double accel
     return callParamCallbacks();
 }
 
+/** Stops an ongoing motion.
+  *
+  * \param[in] acceleration  Motion parameter
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSAxis::stop(double acceleration) {
     asynStatus status = asynError;
 
@@ -365,6 +410,12 @@ asynStatus OWISPSAxis::stop(double acceleration) {
     return callParamCallbacks();
 }
 
+/** Forces the axis readback position to some value.
+  *
+  * \param[in] position  The desired readback position
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSAxis::setPosition(double position) {
     asynStatus status = asynError;
 
@@ -377,12 +428,12 @@ asynStatus OWISPSAxis::setPosition(double position) {
 }
 
 /** Polls the axis.
-  * This function reads the controller position, encoder position, the limit status, the moving status, 
-  * and the drive power-on status.  It does not current detect following error, etc. but this could be
-  * added.
-  * It calls setIntegerParam() and setDoubleParam() for each item that it polls,
-  * and then calls callParamCallbacks() at the end.
-  * \param[out] moving A flag that is set indicating that the axis is moving (1) or done (0). */
+  * Reads the limits state and readback position and calls setIntegerParam() or setDoubleParam() for each item that it polls.
+  *
+  * \param[out] moving A flag that is set indicating that the axis is moving (1) or done (0).
+  *
+  * \return Result of callParamCallbacks() call
+  */
 asynStatus OWISPSAxis::poll(bool *moving) { 
     asynStatus status = asynError;
     int at_limit, ismoving, lim_switches, readback_counter;
@@ -433,6 +484,10 @@ asynStatus OWISPSAxis::poll(bool *moving) {
     return callParamCallbacks();
 }
 
+/** Updates the axis status. Calls setIntegerParam() for moving, done, home, homed.
+  *
+  * \param[in] owisps_status Axis status, from controller
+  */
 void OWISPSAxis::updateAxisStatus(char owisps_status) {
     int status_done, status_home, status_moving;
 
@@ -488,6 +543,10 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
     }
 }
 
+/** Raises the motor record problem status.
+  *
+  * \param[in] status Last operation status
+  */
 void OWISPSAxis::setStatusProblem(asynStatus status) {
     int status_problem;
 
@@ -503,7 +562,10 @@ void OWISPSAxis::setStatusProblem(asynStatus status) {
 }
 
 
-
+/** Initializes the axis, if motor record INIT field equals to "INIT".
+  *
+  * \return Result of either getStringParam() or writeController() calls
+  */
 asynStatus OWISPSAxis::executeInit(void) {
     asynStatus status = asynError;
     char init[MAX_OWISPS_STRING_SIZE]; // Motor record INIT field
@@ -522,6 +584,10 @@ asynStatus OWISPSAxis::executeInit(void) {
     return status;
 }
 
+/** Initializes or enables the axis, if motor record PREM field equals to "INIT" or "MON".
+  *
+  * \return Result of either getStringParam() or writeController() calls
+  */
 asynStatus OWISPSAxis::executePrem(void) {
     asynStatus status = asynError;
     char prem[MAX_OWISPS_STRING_SIZE]; // Motor record PREM field
@@ -543,6 +609,10 @@ asynStatus OWISPSAxis::executePrem(void) {
     return status;
 }
 
+/** Disables the axis, if motor record POST field equals to "MOFF".
+  *
+  * \return Result of either getStringParam() or writeController() calls
+  */
 asynStatus OWISPSAxis::executePost(void) {
     asynStatus status = asynError;
     char post[MAX_OWISPS_STRING_SIZE]; // Motor record POST field
@@ -565,11 +635,14 @@ asynStatus OWISPSAxis::executePost(void) {
 
 /** Creates a new OWISPSController object.
   * Configuration command, called directly or from iocsh
+  *
   * \param[in] portName          The name of the asyn port that will be created for this driver
   * \param[in] asynPortName      The name of the drvAsynIPPort/drvAsynSerialPortConfigure that was created previously to connect to the OWIS controller 
   * \param[in] numAxes           The number of axes that this controller supports 
   * \param[in] movingPollPeriod  The time in ms between polls when any axis is moving
   * \param[in] idlePollPeriod    The time in ms between polls when no axis is moving 
+  *
+  * \return Always asynSuccess
   */
 extern "C" int OWISPSCreateController(const char *portName, const char *asynPortName, int numAxes,  int movingPollPeriod, int idlePollPeriod) {
     new OWISPSController(portName, asynPortName, numAxes, movingPollPeriod/1000., idlePollPeriod/1000.);
@@ -583,10 +656,10 @@ static const iocshArg OWISPSCreateControllerArg2 = { "Number of axes", iocshArgI
 static const iocshArg OWISPSCreateControllerArg3 = { "Moving poll period (ms)", iocshArgInt };
 static const iocshArg OWISPSCreateControllerArg4 = { "Idle poll period (ms)", iocshArgInt };
 static const iocshArg * const OWISPSCreateControllerArgs[] = { &OWISPSCreateControllerArg0,
-                                                                 &OWISPSCreateControllerArg1,
-                                                                 &OWISPSCreateControllerArg2,
-                                                                 &OWISPSCreateControllerArg3,
-                                                                 &OWISPSCreateControllerArg4 };
+                                                               &OWISPSCreateControllerArg1,
+                                                               &OWISPSCreateControllerArg2,
+                                                               &OWISPSCreateControllerArg3,
+                                                               &OWISPSCreateControllerArg4 };
 static const iocshFuncDef OWISPSCreateControllerDef = { "OWISPSCreateController", 5, OWISPSCreateControllerArgs };
 static void OWISPSCreateControllerCallFunc(const iocshArgBuf *args) {
     OWISPSCreateController(args[0].sval, args[1].sval, args[2].ival, args[3].ival, args[4].ival);

@@ -2,7 +2,7 @@
 FILENAME...   OWISPSMotorDriver.h
 USAGE...      Motor driver support (model 3, asyn) for the OWIS PS controller series
 
-Jose Gabadinho
+Jose G.C. Gabadinho
 September 2020
 */
 
@@ -163,8 +163,6 @@ protected:
     int driverPremParam;
     int driverPostParam;
 #define NUM_OWISPS_PARAMS 3
-
-private:
 
 friend class OWISPSAxis;
 };

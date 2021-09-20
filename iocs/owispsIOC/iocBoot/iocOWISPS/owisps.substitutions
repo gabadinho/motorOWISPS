@@ -2,8 +2,8 @@ file "$(MOTOR)/db/basic_asyn_motor.db"
 {
 pattern
 {P,        M,        DTYP,         PORT,      ADDR,  DESC,            EGU,  DIR,  VELO,  VBAS,  ACCL,  BDST,  BVEL,  BACC,  MRES,    PREC,  DHLM,  DLLM,  INIT  }
-{OWISPS:,  "MOT0",   "asynMotor",  OWISPS35,  0,     "OWIS PS Mot0",  mm,   Pos,  0,     0,     0,     0,     1,     .2,    0.0001,  5,     0,     1,     ""    }
-{OWISPS:,  "MOT1",   "asynMotor",  OWISPS35,  1,     "OWIS PS Mot1",  mm,   Pos,  0,     0,     0,     0,     1,     .2,    0.0001,  5,     0,     1,     "INIT"}
+{OWISPS:,  "MOT0",   "asynMotor",  OWISPS35,  0,     "OWIS PS Mot0",  mm,   Pos,  0,     0,     0,     0,     1,     .2,    0.0001,  5,     0,     0,     ""    }
+{OWISPS:,  "MOT1",   "asynMotor",  OWISPS35,  1,     "OWIS PS Mot1",  mm,   Pos,  0,     0,     0,     0,     1,     .2,    0.0001,  5,     0,     0,     "INIT"}
 }
 
 file "$(MOTOR_OWISPS)/db/owisps_motor_extra.template"

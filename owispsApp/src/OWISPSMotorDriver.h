@@ -122,6 +122,7 @@ public:
 
     asynStatus poll(bool *moving);
 
+protected:
     // Specific class methods
     void updateAxisStatus(char owisps_status);
 

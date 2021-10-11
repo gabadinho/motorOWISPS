@@ -11,6 +11,8 @@ September 2020
 #include <stdlib.h>
 #include <math.h>
 
+#include "OWISPSMotorDriver.h"
+
 #include <iocsh.h>
 #include <epicsThread.h>
 
@@ -18,8 +20,6 @@ September 2020
 
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
-
-#include "OWISPSMotorDriver.h"
 
 #include <epicsExport.h>
 
@@ -171,7 +171,7 @@ asynStatus OWISPSController::poll() {
     if (status == asynSuccess) {
         int l=strlen(inString_);
         for (int i=0; i<l; i++) {
-            axis = this->getAxis(i);
+            axis = getAxis(i);
             if (axis) {
                 axis->updateAxisStatus(inString_[i]);
             }
@@ -315,7 +315,7 @@ asynStatus OWISPSAxis::move(double position, int relative, double minVelocity, d
 
     switch(this->axisType) {
         case STEPPER_OPENLOOP:
-            status = this->executePrem();
+            status = executePrem();
             if ((status == asynError) && (is_disabled)) {
                 // Motor wasn't ready and no prem command defined
             } else {
@@ -368,7 +368,7 @@ asynStatus OWISPSAxis::home(double minVelocity, double maxVelocity, double accel
 
     switch(this->axisType) {
         case STEPPER_OPENLOOP:
-            status = this->executePrem();
+            status = executePrem();
             if ((status == asynError) && (is_disabled)) {
                 // Motor wasn't ready and no prem command defined
             } else {
@@ -510,14 +510,14 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
 
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusDone_, &status_done);
                 if (!status_done) {
-                    this->setIntegerParam(pC_->motorStatusDone_, 1);
-                    this->executePost();
+                    setIntegerParam(pC_->motorStatusDone_, 1);
+                    executePost();
                 }
 
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusHome_, &status_home);
                 if (status_home) {
-                    this->setIntegerParam(pC_->motorStatusHome_, 0);
-                    this->setIntegerParam(pC_->motorStatusHomed_, 1);
+                    setIntegerParam(pC_->motorStatusHome_, 0);
+                    setIntegerParam(pC_->motorStatusHomed_, 1);
                 }
                 break;
 
@@ -531,11 +531,11 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
 
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusMoving_, &status_moving);
                 if (!status_moving) {
-                    this->setIntegerParam(pC_->motorStatusMoving_, 1);
+                    setIntegerParam(pC_->motorStatusMoving_, 1);
                 }
                 pC_->getIntegerParam(this->axisNo_, pC_->motorStatusDone_, &status_done);
                 if (status_done) {
-                    this->setIntegerParam(pC_->motorStatusDone_, 0);
+                    setIntegerParam(pC_->motorStatusDone_, 0);
                 }
                 break;
             
@@ -552,12 +552,10 @@ void OWISPSAxis::setStatusProblem(asynStatus status) {
 
     pC_->getIntegerParam(this->axisNo_, pC_->motorStatus_, &status_problem);
     if ((status != asynSuccess) && (!status_problem)) {
-        //this->setIntegerParam(pC_->motorStatus_, status | 0x0200);
-        this->setIntegerParam(pC_->motorStatusProblem_, 1);
+        setIntegerParam(pC_->motorStatusProblem_, 1);
     }
     if ((status == asynSuccess) && (status_problem)) {
-        //this->setIntegerParam(pC_->motorStatus_, status & 0xFDFF);
-        this->setIntegerParam(pC_->motorStatusProblem_, 0);
+        setIntegerParam(pC_->motorStatusProblem_, 0);
     }
 }
 

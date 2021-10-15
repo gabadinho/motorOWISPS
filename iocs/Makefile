@@ -1,7 +1,7 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
 
-DIRS += owispsIOC
+DIRS += owispsIOC gtestIOC
 
 include $(TOP)/configure/RULES_TOP
 

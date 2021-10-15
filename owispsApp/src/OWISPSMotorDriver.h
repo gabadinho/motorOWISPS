@@ -9,8 +9,8 @@ September 2020
 #ifndef _OWISPSMOTORDRIVER_H_
 #define _OWISPSMOTORDRIVER_H_
 
-#include "asynMotorController.h"
-#include "asynMotorAxis.h"
+#include <asynMotorController.h>
+#include <asynMotorAxis.h>
 
 
 
@@ -122,6 +122,12 @@ public:
 
     asynStatus poll(bool *moving);
 
+    // Static class methods
+    static bool buildGenericCommand(char *buffer, const char *command_format, int axis);
+    static bool buildMoveCommand(char *buffer, int axis, double position);
+    static bool buildSetPositionCommand(char *buffer, int axis, double position);
+    static bool buildHomeCommand(char *buffer, int axis, int home_type);
+
 protected:
     // Specific class methods
     void updateAxisStatus(char owisps_status);
@@ -159,6 +165,9 @@ public:
 
     asynStatus poll();
 
+    // Static class methods
+    static bool buildGenericCommand(char *buffer, const char *command_format);
+
 protected:
     int driverInitParam;
     int driverPremParam;
@@ -169,3 +178,4 @@ friend class OWISPSAxis;
 };
 
 #endif // _OWISPSMOTORDRIVER_H_
+

@@ -22,3 +22,8 @@ Use the above records to specify the INIT, PREM and POST motion commants:
 - ```INIT```, ```MON``` commands for INIT, PREM records.
 - ```MOFF``` command for POST records.
 
+### Limitations:
+- Only stepper-motors without encoders have been implemented and tested
+- Homing is currently hardwired to OWIS method 4
+- Changing velocity is not (yet) implemented
+

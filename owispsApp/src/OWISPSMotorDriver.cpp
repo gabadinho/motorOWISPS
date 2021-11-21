@@ -10,6 +10,7 @@ September 2020
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdarg.h>
 
 #include "OWISPSMotorDriver.h"
 
@@ -50,22 +51,22 @@ OWISPSController::OWISPSController(const char *portName, const char *asynPortNam
     createParam(AXIS_POST_PARAMNAME, asynParamOctet, &driverPostParam);
 
     // Connect to PS controller
-    asynPrint(this->pasynUserSelf, ASYN_TRACE_FLOW, "%s:%s: Creating OWIS PS controller %s to asyn %s with %d axes\n", driverName, functionName, portName, asynPortName, numAxes);
+    log(ASYN_TRACE_FLOW, "%s:%s: Creating OWIS PS controller %s to asyn %s with %d axes\n", driverName, functionName, portName, asynPortName, numAxes);
     status = pasynOctetSyncIO->connect(asynPortName, 0, &pasynUserController_, NULL);
     if (status) {
-        asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s:%s: cannot connect to OWIS PS controller\n", driverName, functionName);
-    }
+        log(ASYN_TRACE_ERROR, "%s:%s: cannot connect to OWIS PS controller\n", driverName, functionName);
+    } else {
+        pasynOctetSyncIO->getInputEos(pasynUserController_, eos, 10, &eos_len);
+        if (!eos_len) {
+            log(ASYN_TRACE_FLOW, "%s:%s: Setting input acknowledgement to CR\n", driverName, functionName);
+            pasynOctetSyncIO->setInputEos(pasynUserController_, "\r", 1);
+        }
 
-    pasynOctetSyncIO->getInputEos(pasynUserController_, eos, 10, &eos_len);
-    if (!eos_len) {
-        asynPrint(this->pasynUserSelf, ASYN_TRACE_FLOW, "%s:%s: Setting input acknowledgement to CR\n", driverName, functionName);
-        pasynOctetSyncIO->setInputEos(pasynUserController_, "\r", 1);
-    }
-
-    pasynOctetSyncIO->getOutputEos(pasynUserController_, eos, 10, &eos_len);
-    if (!eos_len) {
-        asynPrint(this->pasynUserSelf, ASYN_TRACE_FLOW, "%s:%s: Setting output acknowledgement to CR\n", driverName, functionName);
-        pasynOctetSyncIO->setOutputEos(pasynUserController_, "\r", 1);
+        pasynOctetSyncIO->getOutputEos(pasynUserController_, eos, 10, &eos_len);
+        if (!eos_len) {
+            log(ASYN_TRACE_FLOW, "%s:%s: Setting output acknowledgement to CR\n", driverName, functionName);
+            pasynOctetSyncIO->setOutputEos(pasynUserController_, "\r", 1);
+        }
     }
 
     // Create the axis objects
@@ -189,6 +190,18 @@ bool OWISPSController::buildGenericCommand(char *buffer, const char *command_for
     return true;
 }
 
+/** Provide a class method to be used instead of asynPrint().
+  * Beware: can be called from constructor!
+  */
+void OWISPSController::log(int reason, const char *format, ...) {
+    if (this->pasynUserSelf) {
+        va_list arglist;
+        va_start(arglist, format);
+        pasynTrace->vprint(this->pasynUserSelf, reason, format, arglist);
+        va_end(arglist);
+    }
+}
+
 
 
 // These are the OWISPSAxis methods
@@ -200,6 +213,7 @@ bool OWISPSController::buildGenericCommand(char *buffer, const char *command_for
   */
 OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axisNo), pC_(pC) {
     asynStatus status;
+    int lim_switches;
 
     this->axisType = UNKNOWN;
     this->axisStatus = OWISPS_STATUS_UNKNOWN;
@@ -207,13 +221,10 @@ OWISPSAxis::OWISPSAxis(OWISPSController *pC, int axisNo): asynMotorAxis(pC, axis
 
     buildGenericCommand(pC->outString_, OWISPS_AXISTYPE_CMD, axisNo);
     status = pC->writeReadController();
-    if (status == asynSuccess) {
-        this->axisType = (owispsAxisType)atoi(pC->inString_);
-
+    if (updateAxisType(status, pC_->inString_, this->axisType, &status)) {
         buildGenericCommand(pC->outString_, OWISPS_LIMSTAT_CMD, axisNo);
         status = pC->writeReadController();
-        if (status == asynSuccess) {
-            int lim_switches = atoi(pC->inString_);
+        if (updateAxisLimitsStatus(status, pC_->inString_, lim_switches, &status)) {
             if (lim_switches & OWISPS_POWSTG_ERROR) {
                 setStatusProblem(asynError);
             }
@@ -442,7 +453,8 @@ asynStatus OWISPSAxis::setPosition(double position) {
   */
 asynStatus OWISPSAxis::poll(bool *moving) { 
     asynStatus status = asynError;
-    int at_limit, ismoving, lim_switches, readback_counter;
+    int at_limit, ismoving, lim_switches;
+    long readback_counter;
 
     if (this->axisType != UNKNOWN) {
 
@@ -456,19 +468,18 @@ asynStatus OWISPSAxis::poll(bool *moving) {
 
         buildGenericCommand(pC_->outString_, OWISPS_LIMSTAT_CMD, this->axisNo_);
         status = pC_->writeReadController();
-        if (status == asynSuccess) {
-            lim_switches = atoi(pC_->inString_);
+        if (updateAxisLimitsStatus(status, pC_->inString_, lim_switches, &status)) {
             if (lim_switches & OWISPS_POWSTG_ERROR) { // Disconnected or power error?
                 status = asynError;
 
             } else {
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusLowLimit_, &at_limit);
+                getIntegerParam(pC_->motorStatusLowLimit_, &at_limit);
                 if ( (lim_switches & OWISPS_LOWLIM_DEC) && (!at_limit)) {
                     setIntegerParam(pC_->motorStatusLowLimit_, 1);
                 } else if ( !(lim_switches & OWISPS_LOWLIM_DEC) && (at_limit)) {
                     setIntegerParam(pC_->motorStatusLowLimit_, 0);
                 }
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusHighLimit_, &at_limit);
+                getIntegerParam(pC_->motorStatusHighLimit_, &at_limit);
                 if ( (lim_switches & OWISPS_HIGHLIM_DEC) && (!at_limit)) {
                     setIntegerParam(pC_->motorStatusHighLimit_, 1);
                 } else if ( !(lim_switches & OWISPS_HIGHLIM_DEC) && (at_limit)) {
@@ -477,8 +488,7 @@ asynStatus OWISPSAxis::poll(bool *moving) {
 
                 buildGenericCommand(pC_->outString_, OWISPS_GETCOUNTER_CMD, this->axisNo_);
                 status = pC_->writeReadController();
-                if (status == asynSuccess) {
-                    readback_counter = atoi(pC_->inString_);
+                if (updateAxisReadbackPosition(status, pC_->inString_, readback_counter, &status)) {
                     setDoubleParam(pC_->motorPosition_, readback_counter);
                 }
             }
@@ -488,6 +498,42 @@ asynStatus OWISPSAxis::poll(bool *moving) {
     setStatusProblem(status);
 
     return callParamCallbacks();
+}
+
+/** All the following methods parse a reply sent by the controller.
+  *
+  */
+bool OWISPSAxis::updateAxisReadbackPosition(asynStatus status, const char *reply, long& readback, asynStatus *asyn_error) {
+    bool res = false;
+    if ((status == asynSuccess) && (issigneddigit(reply))) {
+        readback = atol(reply);
+        res = true;
+    } else {
+        if (asyn_error) *asyn_error = asynError;
+    }
+    return res;
+}
+
+bool OWISPSAxis::updateAxisLimitsStatus(asynStatus status, const char *reply, int& lim_switches, asynStatus *asyn_error) {
+    bool res = false;
+    if ((status == asynSuccess) && (strlen(reply)) && (isdigit(*reply))) {
+        lim_switches = atoi(reply);
+        res = true;
+    } else {
+        if (asyn_error) *asyn_error = asynError;
+    }
+    return res;
+}
+
+bool OWISPSAxis::updateAxisType(asynStatus status, const char *reply, owispsAxisType& ax_type, asynStatus *asyn_error) {
+    bool res = false;
+    if ((status == asynSuccess) && (strlen(reply)==1) && ((*reply>='0') && (*reply<='4'))) {
+        ax_type = static_cast<owispsAxisType>(atoi(reply));
+        res = true;
+    } else {
+        if (asyn_error) *asyn_error = asynError;
+    }
+    return res;
 }
 
 /** The following methods generate a command string to be sent to the controller.
@@ -547,18 +593,18 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
             case OWISPS_STATUS_READY:
                 setStatusProblem(asynSuccess);
 
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusMoving_, &status_moving);
+                getIntegerParam(pC_->motorStatusMoving_, &status_moving);
                 if (status_moving) {
                     this->setIntegerParam(pC_->motorStatusMoving_, 0);
                 }
 
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusDone_, &status_done);
+                getIntegerParam(pC_->motorStatusDone_, &status_done);
                 if (!status_done) {
                     setIntegerParam(pC_->motorStatusDone_, 1);
                     executePost();
                 }
 
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusHome_, &status_home);
+                getIntegerParam(pC_->motorStatusHome_, &status_home);
                 if (status_home) {
                     setIntegerParam(pC_->motorStatusHome_, 0);
                     setIntegerParam(pC_->motorStatusHomed_, 1);
@@ -573,11 +619,11 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
             case OWISPS_STATUS_POSSCURVWMS:
                 setStatusProblem(asynSuccess);
 
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusMoving_, &status_moving);
+                getIntegerParam(pC_->motorStatusMoving_, &status_moving);
                 if (!status_moving) {
                     setIntegerParam(pC_->motorStatusMoving_, 1);
                 }
-                pC_->getIntegerParam(this->axisNo_, pC_->motorStatusDone_, &status_done);
+                getIntegerParam(pC_->motorStatusDone_, &status_done);
                 if (status_done) {
                     setIntegerParam(pC_->motorStatusDone_, 0);
                 }
@@ -594,7 +640,7 @@ void OWISPSAxis::updateAxisStatus(char owisps_status) {
 void OWISPSAxis::setStatusProblem(asynStatus status) {
     int status_problem;
 
-    pC_->getIntegerParam(this->axisNo_, pC_->motorStatus_, &status_problem);
+    getIntegerParam(pC_->motorStatus_, &status_problem);
     if ((status != asynSuccess) && (!status_problem)) {
         setIntegerParam(pC_->motorStatusProblem_, 1);
     }
@@ -612,7 +658,7 @@ asynStatus OWISPSAxis::executeInit(void) {
     asynStatus status = asynError;
     char init[MAX_OWISPS_STRING_SIZE]; // Motor record INIT field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->driverInitParam, (int)sizeof(init), init) == asynSuccess) {
+    if (getStringParam(pC_->driverInitParam, (int)sizeof(init), init) == asynSuccess) {
         if (strlen(init)) {
             if (!strcmp(init, AXIS_INIT_VALUEINIT)) {
                 buildGenericCommand(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_);
@@ -634,7 +680,7 @@ asynStatus OWISPSAxis::executePrem(void) {
     asynStatus status = asynError;
     char prem[MAX_OWISPS_STRING_SIZE]; // Motor record PREM field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->driverPremParam, (int)sizeof(prem), prem) == asynSuccess) {
+    if (getStringParam(pC_->driverPremParam, (int)sizeof(prem), prem) == asynSuccess) {
         if (strlen(prem)) {
             if (!strcmp(prem, AXIS_PREM_VALUEINIT)) {
                 buildGenericCommand(pC_->outString_, OWISPS_INIT_CMD, this->axisNo_);
@@ -659,7 +705,7 @@ asynStatus OWISPSAxis::executePost(void) {
     asynStatus status = asynError;
     char post[MAX_OWISPS_STRING_SIZE]; // Motor record POST field
 
-    if (pC_->getStringParam(this->axisNo_, pC_->driverPostParam, (int)sizeof(post), post) == asynSuccess) {
+    if (getStringParam(pC_->driverPostParam, (int)sizeof(post), post) == asynSuccess) {
         if (strlen(post)) {
             if (!strcmp(post, AXIS_POST_VALUEOFF)) {
                 buildGenericCommand(pC_->outString_, OWISPS_MOFF_CMD, this->axisNo_);
@@ -671,6 +717,29 @@ asynStatus OWISPSAxis::executePost(void) {
     }
 
     return status;
+}
+
+/** Shortcuts to asynMotorController functions.
+  *
+  */
+asynStatus OWISPSAxis::getIntegerParam(int index, epicsInt32 *value) {
+    return this->pC_->getIntegerParam(this->axisNo_, index, value);
+}
+
+asynStatus OWISPSAxis::getStringParam(int index, int max_chars, char *value) {
+    return this->pC_->getStringParam(this->axisNo_, index, max_chars, value);
+}
+
+/** Provide a class method to be used instead of asynPrint().
+  * Beware: can be called from constructor!
+  */
+void OWISPSAxis::log(int reason, const char *format, ...) {
+    if (this->pC_) {
+        va_list arglist;
+        va_start(arglist, format);
+        pasynTrace->vprint(pC_->pasynUserSelf, reason, format, arglist);
+        va_end(arglist);
+    }
 }
 
 

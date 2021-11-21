@@ -122,25 +122,41 @@ public:
 
     asynStatus poll(bool *moving);
 
-    // Static class methods
+    // Class-wide methods
+    static bool updateAxisReadbackPosition(asynStatus status, const char *reply, long& readback, asynStatus *asyn_error);
+    static bool updateAxisLimitsStatus(asynStatus status, const char *reply, int& lim_switches, asynStatus *asyn_error);
+    static bool updateAxisType(asynStatus status, const char *reply, owispsAxisType& ax_type, asynStatus *asyn_error);
+
     static bool buildGenericCommand(char *buffer, const char *command_format, int axis);
     static bool buildMoveCommand(char *buffer, int axis, double position);
     static bool buildSetPositionCommand(char *buffer, int axis, double position);
     static bool buildHomeCommand(char *buffer, int axis, int home_type);
 
+    static bool issigneddigit(const char *buffer) {
+        size_t buf_len = strlen(buffer);
+        if (buf_len == 1) return isdigit(*buffer);
+        if (buf_len > 1) return isdigit(*buffer) || (*buffer=='-' && isdigit(*++buffer));
+        return false;
+    }
+
 protected:
     // Specific class methods
-    void updateAxisStatus(char owisps_status);
+    virtual void updateAxisStatus(char owisps_status);
 
-    void setStatusProblem(asynStatus status);
+    virtual void setStatusProblem(asynStatus status);
 
-    asynStatus executeInit(void);
-    asynStatus executePrem(void);
-    asynStatus executePost(void);
+    virtual asynStatus executeInit(void);
+    virtual asynStatus executePrem(void);
+    virtual asynStatus executePost(void);
+
+    virtual asynStatus getIntegerParam(int index, epicsInt32 *value);
+    virtual asynStatus getStringParam(int index, int max_chars, char *value);
+
+    virtual void log(int reason, const char *format, ...);
+
+    OWISPSController *pC_; // Pointer to the asynMotorController to which this axis belongs
 
 private:
-    OWISPSController *pC_; // Pointer to the asynMotorController to which this axis belongs
-  
     owispsAxisType axisType;
     int homingType;
     char axisStatus;
@@ -169,6 +185,8 @@ public:
     static bool buildGenericCommand(char *buffer, const char *command_format);
 
 protected:
+    virtual void log(int reason, const char *format, ...);
+
     int driverInitParam;
     int driverPremParam;
     int driverPostParam;

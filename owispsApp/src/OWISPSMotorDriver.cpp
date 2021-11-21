@@ -579,7 +579,7 @@ bool OWISPSAxis::buildHomeCommand(char *buffer, int axis, int home_type) {
   * \param[in] owisps_status Axis status, from controller
   */
 void OWISPSAxis::updateAxisStatus(char owisps_status) {
-    int status_done, status_home, status_moving;
+    int status_done=1, status_home=0, status_moving=0;
 
     if (this->axisType != UNKNOWN) {
 

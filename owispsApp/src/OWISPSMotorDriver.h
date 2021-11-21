@@ -156,9 +156,10 @@ protected:
 
     OWISPSController *pC_; // Pointer to the asynMotorController to which this axis belongs
 
-private:
     owispsAxisType axisType;
     int homingType;
+
+private:
     char axisStatus;
   
 friend class OWISPSController;
